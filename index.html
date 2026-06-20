@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Performance & Peer Cohort Analytics</title>
+    <!-- Tailwind CSS for modern responsive utility styles -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js for beautiful interactive analytics charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome for crisp modern iconography -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbars for a premium dashboard look */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+<!-- Header Navigation Bar -->
+<header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+            <div class="bg-indigo-600 text-white p-2.5 rounded-xl shadow-md shadow-indigo-100 flex items-center justify-center">
+                <i class="fa-solid fa-chart-line text-lg"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg text-slate-900 tracking-tight">QuizSphere Analytics</h1>
+                <p class="text-xs text-slate-500 font-medium">Dataset Status: <span id="sourceIndicator" class="font-semibold text-amber-600">Demo Database Active</span></p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-3">
+            <span id="syncBadge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800">
+                <span class="w-1.5 h-1.5 mr-1.5 bg-indigo-500 rounded-full animate-pulse"></span>
+                Local Database Mode
+            </span>
+        </div>
+    </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- Google Sheets Integration & Setup Hub -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm mb-8 transition-all hover:shadow-md">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div class="space-y-1 max-w-xl">
+                <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <i class="fa-brands fa-google-drive text-emerald-600"></i> Google Drive Sheet Integration
+                </h2>
+                <p class="text-xs text-slate-500">
+                    Connect your own live student spreadsheet to analyze responses in real-time. Enter your shared Google Sheets link below.
+                </p>
+                
+                <!-- Quick Setup Checklist -->
+                <details class="text-[11px] text-slate-400 cursor-pointer pt-1">
+                    <summary class="hover:text-indigo-600 font-medium select-none focus:outline-none">View Google Sheet column requirements & setup guide</summary>
+                    <div class="mt-2 p-3 bg-slate-50 rounded-xl border border-slate-100 text-slate-600 leading-relaxed space-y-1">
+                        <p class="font-semibold text-slate-800">Ensure your Google Sheet meets the following guidelines:</p>
+                        <ol class="list-decimal pl-4 space-y-1 text-slate-500">
+                            <li>Set sharing to: <span class="font-semibold text-slate-700">"Anyone with the link can view"</span>.</li>
+                            <li>The first row must contain exact headers (case-insensitive): <br>
+                                <code class="bg-slate-200 px-1 py-0.5 rounded text-indigo-700 font-mono text-[10px]">timestamp</code>,
+                                <code class="bg-slate-200 px-1 py-0.5 rounded text-indigo-700 font-mono text-[10px]">student_gmail_id</code>,
+                                <code class="bg-slate-200 px-1 py-0.5 rounded text-indigo-700 font-mono text-[10px]">quiz_name</code>,
+                                <code class="bg-slate-200 px-1 py-0.5 rounded text-indigo-700 font-mono text-[10px]">question_id</code>,
+                                <code class="bg-slate-200 px-1 py-0.5 rounded text-indigo-700 font-mono text-[10px]">student_answer</code>,
+                                <code class="bg-slate-200 px-1 py-0.5 rounded text-indigo-700 font-mono text-[10px]">is_correct</code>,
+                                <code class="bg-slate-200 px-1 py-0.5 rounded text-indigo-700 font-mono text-[10px]">time_spent_seconds</code>,
+                                <code class="bg-slate-200 px-1 py-0.5 rounded text-indigo-700 font-mono text-[10px]">selection_changes</code>
+                            </li>
+                        </ol>
+                    </div>
+                </details>
+            </div>
+            
+            <div class="flex-1 max-w-xl">
+                <div class="flex flex-col sm:flex-row gap-3">
+                    <div class="relative flex-grow">
+                        <input type="text" id="sheetUrlInput" 
+                               placeholder="Paste shared Google Sheets link or Sheet ID here" 
+                               class="w-full pl-9 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-slate-700">
+                        <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                            <i class="fa-solid fa-link text-xs"></i>
+                        </div>
+                    </div>
+                    <button onclick="syncWithGoogleSheet()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5 shrink-0">
+                        <i class="fa-solid fa-arrows-rotate animate-spin-hover"></i> Synchronize Data
+                    </button>
+                </div>
+                <div id="connectionFeedback" class="hidden mt-2 text-[11px] font-medium">
+                    <!-- Dynamic validation notes -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Control Panel & Search Section -->
+    <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm mb-8 transition-all hover:shadow-md">
+        <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+            <div class="space-y-1">
+                <h2 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-indigo-600"></i> Analytics Search & Filters
+                </h2>
+                <p class="text-sm text-slate-500">Filter modules, search by name, and compare individual results against class benchmarks.</p>
+            </div>
+            
+            <div class="flex flex-wrap items-end gap-4">
+                <!-- Search Box for DT / EOC named entities -->
+                <div class="w-full sm:w-60">
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Search Assessment</label>
+                    <div class="relative">
+                        <input type="text" id="quizSearchQuery" oninput="onSearchQueryChange()"
+                               placeholder="Type keyword (e.g. DT, EOC, Chapter)" 
+                               class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium text-slate-700">
+                        <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                            <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Categorization Toggles -->
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Quiz Category</label>
+                    <div class="inline-flex p-1 bg-slate-100 rounded-xl" role="group">
+                        <button onclick="setQuizCategory('ALL')" id="catBtnALL" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-white text-indigo-600 shadow-sm">
+                            All Quizzes
+                        </button>
+                        <button onclick="setQuizCategory('DT')" id="catBtnDT" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-600 hover:text-slate-900">
+                            Tests (DT)
+                        </button>
+                        <button onclick="setQuizCategory('EOC')" id="catBtnEOC" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-600 hover:text-slate-900">
+                            Exercises (EOC)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Student Selector Dropdown -->
+                <div class="w-full sm:w-60">
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Selected Student</label>
+                    <div class="relative">
+                        <select id="studentSelect" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium text-slate-700 appearance-none cursor-pointer">
+                            <!-- Populated by JavaScript -->
+                        </select>
+                        <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                            <i class="fa-solid fa-user-graduate"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quiz Selector Dropdown -->
+                <div class="w-full sm:w-60">
+                    <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Select Target Quiz</label>
+                    <div class="relative">
+                        <select id="quizSelect" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm font-medium text-slate-700 appearance-none cursor-pointer">
+                            <!-- Populated by JavaScript -->
+                        </select>
+                        <div class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                            <i class="fa-solid fa-file-invoice"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Analytics Stats Row -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <!-- Card 1: Accuracy -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-24 h-24 -mr-6 -mt-6 bg-indigo-50 rounded-full -z-1 opacity-60"></div>
+            <div class="flex items-center justify-between mb-4">
+                <span class="text-sm font-semibold text-slate-500">Your Quiz Accuracy</span>
+                <span class="p-2 bg-indigo-50 text-indigo-600 rounded-xl"><i class="fa-solid fa-bullseye text-base"></i></span>
+            </div>
+            <div>
+                <div class="flex items-baseline space-x-2">
+                    <span id="studentAccuracy" class="text-3xl font-extrabold text-slate-900">0%</span>
+                    <span id="diffAccuracyBadge" class="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">vs Peers</span>
+                </div>
+                <div class="mt-3 flex items-center text-xs text-slate-500 gap-1.5">
+                    <span class="font-medium">Cohort Average:</span>
+                    <span id="cohortAccuracy" class="font-bold text-slate-700">0%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 2: Speed / Pacing -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-24 h-24 -mr-6 -mt-6 bg-emerald-50 rounded-full -z-1 opacity-60"></div>
+            <div class="flex items-center justify-between mb-4">
+                <span class="text-sm font-semibold text-slate-500">Average Time Spent</span>
+                <span class="p-2 bg-emerald-50 text-emerald-600 rounded-xl"><i class="fa-solid fa-stopwatch text-base"></i></span>
+            </div>
+            <div>
+                <div class="flex items-baseline space-x-2">
+                    <span id="studentPacing" class="text-3xl font-extrabold text-slate-900">0s</span>
+                    <span id="diffPacingBadge" class="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">vs Peers</span>
+                </div>
+                <div class="mt-3 flex items-center text-xs text-slate-500 gap-1.5">
+                    <span class="font-medium">Cohort Average:</span>
+                    <span id="cohortPacing" class="font-bold text-slate-700">0s</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 3: Hesitation Index -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-24 h-24 -mr-6 -mt-6 bg-amber-50 rounded-full -z-1 opacity-60"></div>
+            <div class="flex items-center justify-between mb-4">
+                <span class="text-sm font-semibold text-slate-500">Hesitation (Answer Swaps)</span>
+                <span class="p-2 bg-amber-50 text-amber-600 rounded-xl"><i class="fa-solid fa-arrows-spin text-base"></i></span>
+            </div>
+            <div>
+                <div class="flex items-baseline space-x-2">
+                    <span id="studentHesitation" class="text-3xl font-extrabold text-slate-900">0</span>
+                    <span id="hesitationSubText" class="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">Changes</span>
+                </div>
+                <div class="mt-3 flex items-center text-xs text-slate-500 gap-1.5">
+                    <span class="font-medium">Cohort Average Swaps:</span>
+                    <span id="cohortHesitation" class="font-bold text-slate-700">0</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card 4: Peer Percentile Rank -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-24 h-24 -mr-6 -mt-6 bg-rose-50 rounded-full -z-1 opacity-60"></div>
+            <div class="flex items-center justify-between mb-4">
+                <span class="text-sm font-semibold text-slate-500">Peer Percentile Rank</span>
+                <span class="p-2 bg-rose-50 text-rose-600 rounded-xl"><i class="fa-solid fa-ranking-star text-base"></i></span>
+            </div>
+            <div>
+                <div class="flex items-baseline space-x-2">
+                    <span id="studentPercentile" class="text-3xl font-extrabold text-slate-900">0th</span>
+                    <span class="text-xs font-semibold text-slate-400">Percentile</span>
+                </div>
+                <div class="mt-3 flex items-center text-xs text-slate-500 gap-1.5">
+                    <span class="font-medium">Rank in Class:</span>
+                    <span id="studentRank" class="font-bold text-slate-700">#0 / 0</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytical Visualization Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
+        
+        <!-- Graph Box 1: Student vs Peer Pacing Profile (8-columns wide) -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow lg:col-span-8 flex flex-col justify-between">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                <div>
+                    <h3 class="font-bold text-lg text-slate-900 flex items-center gap-2">
+                        <i class="fa-solid fa-chart-bar text-indigo-600"></i> Pacing Profiler: Question-by-Question Time
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Compares student time spent (seconds) with the cohort average for each question.</p>
+                </div>
+                <div class="flex items-center gap-4 text-xs font-semibold text-slate-600">
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-indigo-600 rounded-sm"></span>Student</span>
+                    <span class="flex items-center gap-1.5"><span class="w-3 h-3 bg-slate-300 rounded-sm"></span>Peer Average</span>
+                </div>
+            </div>
+            <div class="h-80 w-full relative">
+                <canvas id="pacingProfileChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Graph Box 2: Accuracy Profile by Difficulty (4-columns wide) -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow lg:col-span-4 flex flex-col justify-between">
+            <div class="mb-4">
+                <h3 class="font-bold text-lg text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-gauge-high text-indigo-600"></i> Difficulty Spectrum
+                </h3>
+                <p class="text-xs text-slate-500 mt-0.5">Student vs. Class cohort success rate filtered by calculated difficulty.</p>
+            </div>
+            <div class="h-64 w-full relative flex items-center justify-center">
+                <canvas id="difficultyBreakdownChart"></canvas>
+            </div>
+            <div class="border-t border-slate-100 pt-4 mt-2">
+                <div class="grid grid-cols-3 text-center gap-2">
+                    <div class="px-2 py-1.5 bg-emerald-50 rounded-lg">
+                        <span class="block text-[10px] font-bold text-emerald-700 uppercase">Easy</span>
+                        <span class="block text-xs text-slate-400 font-medium">Cohort Acc.</span>
+                        <span class="block text-xs font-bold text-slate-700">&gt;75%</span>
+                    </div>
+                    <div class="px-2 py-1.5 bg-indigo-50 rounded-lg">
+                        <span class="block text-[10px] font-bold text-indigo-700 uppercase">Medium</span>
+                        <span class="block text-xs text-slate-400 font-medium">Cohort Acc.</span>
+                        <span class="block text-xs font-bold text-slate-700">45%-75%</span>
+                    </div>
+                    <div class="px-2 py-1.5 bg-rose-50 rounded-lg">
+                        <span class="block text-[10px] font-bold text-rose-700 uppercase">Hard</span>
+                        <span class="block text-xs text-slate-400 font-medium">Cohort Acc.</span>
+                        <span class="block text-xs font-bold text-slate-700">&lt;45%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quadrant Analysis & Coaching Module Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
+        
+        <!-- Behavior Quadrant grid visualizer (5-columns wide) -->
+        <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow lg:col-span-5 flex flex-col justify-between">
+            <div>
+                <h3 class="font-bold text-lg text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-table-cells-large text-indigo-600"></i> Pacing-Accuracy Quadrant Profile
+                </h3>
+                <p class="text-xs text-slate-500 mt-1 mb-4">Maps total questions answered in this quiz into performance behaviors based on pacing relative to peers.</p>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-3 mb-2">
+                <!-- Quadrant 1: Mastered -->
+                <div class="p-4 bg-emerald-50/70 border border-emerald-100 rounded-xl relative">
+                    <span class="absolute top-2 right-2 text-emerald-400"><i class="fa-solid fa-circle-check text-sm"></i></span>
+                    <h4 class="text-xs font-bold text-emerald-800 uppercase tracking-wider">Fast & Accurate</h4>
+                    <span id="quadMasteredCount" class="block text-2xl font-black text-emerald-900 my-1">0</span>
+                    <p class="text-[11px] text-emerald-700/80 font-medium">Questions answered correctly in less than the cohort median time.</p>
+                </div>
+
+                <!-- Quadrant 2: Deliberate -->
+                <div class="p-4 bg-indigo-50/70 border border-indigo-100 rounded-xl relative">
+                    <span class="absolute top-2 right-2 text-indigo-400"><i class="fa-solid fa-circle-info text-sm"></i></span>
+                    <h4 class="text-xs font-bold text-indigo-800 uppercase tracking-wider">Slow & Accurate</h4>
+                    <span id="quadDeliberateCount" class="block text-2xl font-black text-indigo-900 my-1">0</span>
+                    <p class="text-[11px] text-indigo-700/80 font-medium">Questions answered correctly but taking longer than classmate median.</p>
+                </div>
+
+                <!-- Quadrant 3: Rushed -->
+                <div class="p-4 bg-amber-50/70 border border-amber-100 rounded-xl relative">
+                    <span class="absolute top-2 right-2 text-amber-400"><i class="fa-solid fa-forward-fast text-sm"></i></span>
+                    <h4 class="text-xs font-bold text-amber-800 uppercase tracking-wider">Fast & Incorrect</h4>
+                    <span id="quadRushedCount" class="block text-2xl font-black text-amber-900 my-1">0</span>
+                    <p class="text-[11px] text-amber-700/80 font-medium">Missed questions answered faster than average. Potential carelessness.</p>
+                </div>
+
+                <!-- Quadrant 4: Struggled -->
+                <div class="p-4 bg-rose-50/70 border border-rose-100 rounded-xl relative">
+                    <span class="absolute top-2 right-2 text-rose-400"><i class="fa-solid fa-triangle-exclamation text-sm"></i></span>
+                    <h4 class="text-xs font-bold text-rose-800 uppercase tracking-wider">Slow & Incorrect</h4>
+                    <span id="quadStruggledCount" class="block text-2xl font-black text-rose-900 my-1">0</span>
+                    <p class="text-[11px] text-rose-700/80 font-medium">Missed questions requiring excessive time. Flag for foundational review.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Custom Coaching engine generated dynamically via performance checks (7-columns wide) -->
+        <div class="bg-gradient-to-br from-indigo-900 to-slate-900 text-white rounded-2xl p-6 shadow-lg flex flex-col justify-between lg:col-span-7">
+            <div>
+                <div class="flex items-center justify-between mb-4 border-b border-indigo-500/20 pb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-amber-400 text-lg"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+                        <h3 class="font-bold text-base uppercase tracking-wider">Dynamic Pacing & Confidence Coach</h3>
+                    </div>
+                    <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-indigo-800/80 text-indigo-200">AI Diagnostics</span>
+                </div>
+                
+                <div class="space-y-4">
+                    <div class="bg-indigo-950/40 p-4 rounded-xl border border-indigo-700/20">
+                        <span class="text-xs font-bold text-amber-300 uppercase tracking-widest block mb-1">Core Assessment Diagnostics</span>
+                        <p id="coachingSummary" class="text-sm text-slate-300 leading-relaxed">Analyzing performance metrics...</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-3 bg-emerald-950/40 border border-emerald-900/30 rounded-lg">
+                            <span class="text-xs font-bold text-emerald-400 block mb-1"><i class="fa-solid fa-award mr-1"></i> Key Mastery Strength</span>
+                            <span id="masteryStrength" class="text-xs text-slate-300">Evaluating strengths...</span>
+                        </div>
+                        <div class="p-3 bg-rose-950/40 border border-rose-900/30 rounded-lg">
+                            <span class="text-xs font-bold text-rose-400 block mb-1"><i class="fa-solid fa-circle-exclamation mr-1"></i> Growth Area & Priority</span>
+                            <span id="growthPriority" class="text-xs text-slate-300">Evaluating priority metrics...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="pt-4 mt-4 border-t border-indigo-500/10 flex items-center justify-between text-[11px] text-indigo-300">
+                <span>Metrics synced with standard cohort medians</span>
+                <span class="font-semibold text-white">QuizSphere Engine v2.5</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Performance Matrix Table -->
+    <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-8 transition-all hover:shadow-md">
+        <div class="px-6 py-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+                <h3 class="font-bold text-lg text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-indigo-600"></i> Comprehensive Performance Matrix
+                </h3>
+                <p class="text-xs text-slate-500 mt-0.5">Deep comparison breakdown of each single question's accuracy, duration, changes, and difficulty level.</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold text-slate-500">Legend:</span>
+                <span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded">Easy</span>
+                <span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded">Medium</span>
+                <span class="px-2 py-0.5 bg-rose-50 text-rose-700 text-[10px] font-bold rounded">Hard</span>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 text-[11px] font-bold text-slate-400 uppercase tracking-wider border-b border-slate-100">
+                        <th class="py-4 px-6">Question ID</th>
+                        <th class="py-4 px-4 text-center">Status</th>
+                        <th class="py-4 px-4">Your Answer</th>
+                        <th class="py-4 px-4 text-center">Calculated Difficulty</th>
+                        <th class="py-4 px-4">Time Spent (Your / Cohort Avg)</th>
+                        <th class="py-4 px-4 text-center">Hesitation (Swaps)</th>
+                        <th class="py-4 px-6 text-center">Cohort Accuracy</th>
+                    </tr>
+                </thead>
+                <tbody id="questionTableBody" class="divide-y divide-slate-100 text-sm text-slate-700">
+                    <!-- Rows rendered dynamically by JS -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<footer class="bg-white border-t border-slate-200 py-8 text-center text-xs text-slate-400 font-medium mt-12">
+    <div class="max-w-7xl mx-auto px-4">
+        <p class="mb-1">Student Quiz Submissions Performance & Pacing Dashboard Prototype</p>
+        <p class="text-[10px] text-slate-300">Engineered with custom Google Drive live synchronization pipeline capabilities</p>
+    </div>
+</footer>
+
+<script>
+// Active spreadsheet/offline unified database pool
+let activeDatabase = [];
+// Current category filter state: "ALL", "DT", "EOC"
+let activeCategoryFilter = "ALL";
+
+// Base offline fallback dataset derived from student records
+const demoDatabase = [];
+
+const shaheerRaw = [
+    { question: 1, is_correct: true, time: 100.43, changes: 0, ans: "earning" },
+    { question: 2, is_correct: true, time: 33.07, changes: 1, ans: "Popular" },
+    { question: 3, is_correct: true, time: 42.36, changes: 0, ans: "Selective" },
+    { question: 4, is_correct: false, time: 63.75, changes: 3, ans: "NO_ANSWER" },
+    { question: 5, is_correct: false, time: 163.29, changes: 2, ans: "to express his identity." },
+    { question: 6, is_correct: true, time: 97.3, changes: 0, ans: "a lack of widespread literacy at the time." },
+    { question: 7, is_correct: true, time: 93.49, changes: 0, ans: "Text 2 provides a specific example..." },
+    { question: 8, is_correct: true, time: 92.84, changes: 1, ans: "positive." },
+    { question: 9, is_correct: true, time: 94.36, changes: 0, ans: "focus on the moment." },
+    { question: 10, is_correct: true, time: 102.26, changes: 0, ans: "$30" },
+    { question: 11, is_correct: false, time: 157.15, changes: 4, ans: "\"And I, who had happiness to share...\"" },
+    { question: 12, is_correct: true, time: 83.18, changes: 0, ans: "Relatively healthy, relatively ill" },
+    { question: 13, is_correct: true, time: 49.89, changes: 0, ans: "chemistry to biology." },
+    { question: 14, is_correct: true, time: 117.81, changes: 1, ans: "Whether humans can observe it without a telescope" },
+    { question: 15, is_correct: false, time: 80.22, changes: 2, ans: "their clients" },
+    { question: 16, is_correct: false, time: 51.4, changes: 1, ans: "found that Io, a moon of Jupiter has" },
+    { question: 17, is_correct: false, time: 42.22, changes: 1, ans: "have been observed" },
+    { question: 18, is_correct: false, time: 121.51, changes: 3, ans: "patient's" },
+    { question: 19, is_correct: true, time: 41.78, changes: 0, ans: "attack the human body on a daily basis." },
+    { question: 20, is_correct: true, time: 35.83, changes: 0, ans: "over" },
+    { question: 21, is_correct: true, time: 48.48, changes: 0, ans: "mill's grounds; it was still" },
+    { question: 22, is_correct: true, time: 28.65, changes: 0, ans: "for example," },
+    { question: 23, is_correct: true, time: 40.5, changes: 1, ans: "Kept, because it provides specific..." },
+    { question: 24, is_correct: false, time: 116.92, changes: 2, ans: "The Geocentric and Heliocentric models..." },
+    { question: 25, is_correct: false, time: 168.37, changes: 3, ans: "Continuing," },
+    { question: 26, is_correct: false, time: 165.07, changes: 5, ans: "spending nearly ten times..." },
+    { question: 27, is_correct: true, time: 161.91, changes: 1, ans: "If the Electoral College were abolished..." }
+];
+
+const hassaanRaw = [
+    { question: 1, is_correct: true, time: 163.2, changes: 0, ans: "earning" },
+    { question: 2, is_correct: false, time: 137.31, changes: 1, ans: "Economical" },
+    { question: 3, is_correct: true, time: 95.4, changes: 0, ans: "Selective" },
+    { question: 4, is_correct: true, time: 135.48, changes: 0, ans: "To transition to a clarification" },
+    { question: 5, is_correct: true, time: 92.76, changes: 1, ans: "to underscore his rootlessness." },
+    { question: 6, is_correct: true, time: 103.57, changes: 0, ans: "a lack of widespread literacy at the time." },
+    { question: 7, is_correct: true, time: 108.4, changes: 1, ans: "Text 2 provides a specific example..." },
+    { question: 8, is_correct: false, time: 119.84, changes: 2, ans: "neutral." },
+    { question: 9, is_correct: true, time: 23.65, changes: 0, ans: "focus on the moment." },
+    { question: 10, is_correct: true, time: 124.37, changes: 0, ans: "$30" },
+    { question: 11, is_correct: true, time: 88.41, changes: 1, ans: "\"Everyone knows that you are dying of thirst...\"" },
+    { question: 12, is_correct: true, time: 232.6, changes: 2, ans: "Relatively healthy, relatively ill" },
+    { question: 13, is_correct: true, time: 38.39, changes: 0, ans: "chemistry to biology." },
+    { question: 14, is_correct: true, time: 38.91, changes: 0, ans: "Whether humans can observe it without a telescope" },
+    { question: 15, is_correct: true, time: 82.88, changes: 1, ans: "their clients'" },
+    { question: 16, is_correct: false, time: 5.1, changes: 0, ans: "found that Io, a moon of Jupiter has" },
+    { question: 17, is_correct: true, time: 206.95, changes: 3, ans: "had been observed" },
+    { question: 18, is_correct: false, time: 78.06, changes: 1, ans: "patient's" },
+    { question: 19, is_correct: true, time: 61.91, changes: 0, ans: "attack the human body on a daily basis." },
+    { question: 20, is_correct: true, time: 18.14, changes: 0, ans: "over" },
+    { question: 21, is_correct: true, time: 75.31, changes: 0, ans: "mill's grounds; it was still" },
+    { question: 22, is_correct: true, time: 57.19, changes: 0, ans: "for example," },
+    { question: 23, is_correct: true, time: 108.53, changes: 1, ans: "Kept, because it provides specific..." },
+    { question: 24, is_correct: true, time: 150.31, changes: 1, ans: "Both the Heliocentric and Geocentric..." },
+    { question: 25, is_correct: true, time: 46.62, changes: 0, ans: "Nevertheless," },
+    { question: 26, is_correct: true, time: 54.97, changes: 0, ans: "sixty games and ninety batting practice sessions later," },
+    { question: 27, is_correct: true, time: 18.63, changes: 0, ans: "If the Electoral College were abolished..." }
+];
+
+// Seed raw inputs into local demoDatabase
+shaheerRaw.forEach(q => {
+    demoDatabase.push({
+        timestamp: "2026-06-19T09:00:17.115Z",
+        student_gmail_id: "shaheer212203@gmail.com",
+        quiz_name: "DT-T0-RW-M1",
+        question_id: `DT-T0-RW-M1-${q.question}`,
+        student_answer: q.ans,
+        is_correct: q.is_correct,
+        time_spent_seconds: q.time,
+        selection_changes: q.changes
+    });
+});
+
+hassaanRaw.forEach(q => {
+    demoDatabase.push({
+        timestamp: "2026-06-19T17:03:06.885Z",
+        student_gmail_id: "hassaanfaraz@gmail.com",
+        quiz_name: "DT-T0-RW-M1",
+        question_id: `DT-T0-RW-M1-${q.question}`,
+        student_answer: q.ans,
+        is_correct: q.is_correct,
+        time_spent_seconds: q.time,
+        selection_changes: q.changes
+    });
+});
+
+// Mock peer group
+const peers = [
+    { mail: "arisha.ahmed@gmail.com", skill: 0.82, paceFactor: 0.95 },
+    { mail: "zain.ali@gmail.com", skill: 0.65, paceFactor: 1.10 },
+    { mail: "fatima.noor@gmail.com", skill: 0.90, paceFactor: 0.85 },
+    { mail: "bilal.sidd@gmail.com", skill: 0.55, paceFactor: 1.25 },
+    { mail: "maryam.khan@gmail.com", skill: 0.76, paceFactor: 1.05 }
+];
+
+peers.forEach(p => {
+    shaheerRaw.forEach(q => {
+        let naturalDifficulty = 0.85; 
+        if ([5, 11, 18, 25, 26].includes(q.question)) naturalDifficulty = 0.35; 
+        if ([4, 15, 16, 24].includes(q.question)) naturalDifficulty = 0.55; 
+
+        const isCorrect = Math.random() < (p.skill * naturalDifficulty);
+        let baseTime = parseFloat((q.time * (0.85 + Math.random() * 0.3) * p.paceFactor).toFixed(2));
+        let changes = isCorrect ? (Math.random() > 0.75 ? 1 : 0) : Math.floor(Math.random() * 3);
+
+        demoDatabase.push({
+            timestamp: "2026-06-19T12:00:00.000Z",
+            student_gmail_id: p.mail,
+            quiz_name: "DT-T0-RW-M1",
+            question_id: `DT-T0-RW-M1-${q.question}`,
+            student_answer: "Cohort Selected Choice",
+            is_correct: isCorrect,
+            time_spent_seconds: baseTime,
+            selection_changes: changes
+        });
+    });
+});
+
+// Seed End of Chapter Exercises (EOC-M-C1 and EOC-M-C2)
+const chapters = ["EOC-M-C1", "EOC-M-C2", "EOC-M-C3"];
+const totalStudents = ["shaheer212203@gmail.com", "hassaanfaraz@gmail.com", ...peers.map(p => p.mail)];
+
+totalStudents.forEach(email => {
+    chapters.forEach(chap => {
+        for (let q = 1; q <= 10; q++) {
+            const isCorrect = Math.random() > 0.35;
+            const time = parseFloat((40 + Math.random() * 110).toFixed(2));
+            const changes = Math.floor(Math.random() * 3);
+
+            demoDatabase.push({
+                timestamp: "2026-06-18T15:30:00.000Z",
+                student_gmail_id: email,
+                quiz_name: chap,
+                question_id: `${chap}-${q}`,
+                student_answer: `Chapter Choice ${Math.floor(Math.random() * 4)}`,
+                is_correct: isCorrect,
+                time_spent_seconds: time,
+                selection_changes: changes
+            });
+        }
+    });
+});
+
+// Establish active database pool
+activeDatabase = [...demoDatabase];
+
+// Trackers for Chart instances
+let pacingChartInstance = null;
+let difficultyChartInstance = null;
+
+// Initialize layout elements
+window.onload = function() {
+    populateFilters();
+    renderDashboard();
+
+    document.getElementById("studentSelect").addEventListener("change", renderDashboard);
+    document.getElementById("quizSelect").addEventListener("change", renderDashboard);
+};
+
+// Auto extract Google sheets export csv streaming links
+function syncWithGoogleSheet() {
+    const inputVal = document.getElementById("sheetUrlInput").value.trim();
+    const feedback = document.getElementById("connectionFeedback");
+    
+    if (!inputVal) {
+        showFeedback("Please paste a valid Google Sheet shared link or Spreadsheet ID.", "text-rose-600");
+        return;
+    }
+
+    let sheetId = inputVal;
+    if (inputVal.includes("docs.google.com/spreadsheets")) {
+        const matches = inputVal.match(/\/d\/([a-zA-Z0-9-_]+)/);
+        if (matches && matches[1]) {
+            sheetId = matches[1];
+        } else {
+            showFeedback("Could not parse the Google Sheet URL. Please check formatting.", "text-rose-600");
+            return;
+        }
+    }
+
+    const exportUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv`;
+    const syncBadge = document.getElementById("syncBadge");
+    
+    syncBadge.innerHTML = `<span class="w-1.5 h-1.5 mr-1.5 bg-indigo-500 rounded-full animate-pulse"></span>Synchronizing...`;
+    syncBadge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-100 text-indigo-800";
+    showFeedback("Contacting Google Drive API stream...", "text-indigo-600");
+
+    fetch(exportUrl)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error("Spreadsheet fetch failed. Check sharing settings.");
+            }
+            return response.text();
+        })
+        .then(csvText => {
+            const parsedData = customCsvParser(csvText);
+            if (parsedData.length === 0) {
+                throw new Error("No readable row entries parsed. Verify columns.");
+            }
+            
+            activeDatabase = parsedData;
+            
+            document.getElementById("sourceIndicator").textContent = "Google Sheets Active";
+            document.getElementById("sourceIndicator").className = "font-semibold text-emerald-600";
+            
+            syncBadge.innerHTML = `<span class="w-1.5 h-1.5 mr-1.5 bg-emerald-500 rounded-full"></span>Google Sheet Linked`;
+            syncBadge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800";
+            
+            showFeedback(`Loaded ${parsedData.length} submissions successfully from Drive!`, "text-emerald-600");
+            
+            populateFilters();
+            renderDashboard();
+        })
+        .catch(error => {
+            console.error(error);
+            syncBadge.innerHTML = `<span class="w-1.5 h-1.5 mr-1.5 bg-rose-500 rounded-full"></span>Failed`;
+            syncBadge.className = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800";
+            showFeedback("Sync failed. Set shared settings to: 'Anyone with link can view' & confirm column header spellings.", "text-rose-600");
+        });
+}
+
+function showFeedback(msg, colorClass) {
+    const feedback = document.getElementById("connectionFeedback");
+    feedback.className = `mt-2 text-[11px] font-semibold ${colorClass}`;
+    feedback.textContent = msg;
+    feedback.classList.remove("hidden");
+}
+
+// CSV cell line parser handles answers with nested commas
+function customCsvParser(text) {
+    const lines = text.split(/\r?\n/);
+    if (lines.length < 2) return [];
+
+    const headers = lines[0].split(',').map(h => h.trim().replace(/^["']|["']$/g, '').toLowerCase());
+    const records = [];
+
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        const row = [];
+        let inQuotes = false;
+        let cell = "";
+        
+        for (let c = 0; c < line.length; c++) {
+            const char = line[c];
+            if (char === '"') {
+                inQuotes = !inQuotes;
+            } else if (char === ',' && !inQuotes) {
+                row.push(cell);
+                cell = "";
+            } else {
+                cell += char;
+            }
+        }
+        row.push(cell);
+
+        const cleanRow = row.map(v => v.trim().replace(/^["']|["']$/g, ''));
+        const obj = {};
+        
+        headers.forEach((h, index) => {
+            let val = cleanRow[index];
+            if (h === 'is_correct') {
+                obj[h] = val.toUpperCase() === 'TRUE' || val === '1' || val.toLowerCase() === 'true';
+            } else if (h === 'time_spent_seconds' || h === 'selection_changes') {
+                obj[h] = parseFloat(val) || 0;
+            } else {
+                obj[h] = val || "";
+            }
+        });
+
+        if (obj.student_gmail_id && obj.quiz_name) {
+            records.push(obj);
+        }
+    }
+    return records;
+}
+
+// Interactive category filter selector (ALL, Diagnostic Tests, End of Chapter)
+function setQuizCategory(category) {
+    activeCategoryFilter = category;
+    
+    const btns = ["ALL", "DT", "EOC"];
+    btns.forEach(b => {
+        const el = document.getElementById(`catBtn${b}`);
+        if (b === category) {
+            el.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all bg-white text-indigo-600 shadow-sm";
+        } else {
+            el.className = "px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all text-slate-600 hover:text-slate-900";
+        }
+    });
+
+    populateFilters(true);
+    renderDashboard();
+}
+
+// Live search processing
+function onSearchQueryChange() {
+    populateFilters(true);
+    renderDashboard();
+}
+
+// Populate student and quiz drop-downs
+function populateFilters(retainSelection = false) {
+    const studentSelect = document.getElementById("studentSelect");
+    const quizSelect = document.getElementById("quizSelect");
+    const searchQuery = document.getElementById("quizSearchQuery").value.toLowerCase().trim();
+
+    const previousStudent = studentSelect.value;
+    const previousQuiz = quizSelect.value;
+
+    let uniqueStudents = [...new Set(activeDatabase.map(row => row.student_gmail_id))];
+    let uniqueQuizzes = [...new Set(activeDatabase.map(row => row.quiz_name))];
+
+    // Filter categories based on selection
+    if (activeCategoryFilter === "DT") {
+        uniqueQuizzes = uniqueQuizzes.filter(name => name.toUpperCase().startsWith("DT-"));
+    } else if (activeCategoryFilter === "EOC") {
+        uniqueQuizzes = uniqueQuizzes.filter(name => name.toUpperCase().startsWith("EOC-"));
+    }
+
+    // Apply Live Search Input query
+    if (searchQuery) {
+        uniqueQuizzes = uniqueQuizzes.filter(name => name.toLowerCase().includes(searchQuery));
+    }
+
+    studentSelect.innerHTML = "";
+    uniqueStudents.forEach(email => {
+        const opt = document.createElement("option");
+        opt.value = email;
+        opt.textContent = email;
+        studentSelect.appendChild(opt);
+    });
+
+    quizSelect.innerHTML = "";
+    if (uniqueQuizzes.length === 0) {
+        const opt = document.createElement("option");
+        opt.value = "";
+        opt.textContent = "No assessments match";
+        quizSelect.appendChild(opt);
+    } else {
+        uniqueQuizzes.forEach(quiz => {
+            const opt = document.createElement("option");
+            opt.value = quiz;
+            opt.textContent = quiz;
+            quizSelect.appendChild(opt);
+        });
+    }
+
+    if (retainSelection) {
+        if (uniqueStudents.includes(previousStudent)) studentSelect.value = previousStudent;
+        if (uniqueQuizzes.includes(previousQuiz)) quizSelect.value = previousQuiz;
+    }
+}
+
+function renderDashboard() {
+    const activeStudent = document.getElementById("studentSelect").value;
+    const activeQuiz = document.getElementById("quizSelect").value;
+
+    if (!activeStudent || !activeQuiz) {
+        clearMetrics();
+        return;
+    }
+
+    const quizCohort = activeDatabase.filter(row => row.quiz_name === activeQuiz);
+    const studentSubmissions = quizCohort.filter(row => row.student_gmail_id === activeStudent);
+
+    if (studentSubmissions.length === 0) {
+        clearMetrics();
+        return;
+    }
+
+    // 1. Calculations
+    const totalQuestions = studentSubmissions.length;
+    const correctSubmissions = studentSubmissions.filter(row => row.is_correct === true);
+    const studentAccVal = totalQuestions > 0 ? (correctSubmissions.length / totalQuestions) * 100 : 0;
+
+    const studentTotalTime = studentSubmissions.reduce((sum, r) => sum + Number(r.time_spent_seconds || 0), 0);
+    const studentAvgTime = totalQuestions > 0 ? studentTotalTime / totalQuestions : 0;
+
+    const studentTotalSwaps = studentSubmissions.reduce((sum, r) => sum + Number(r.selection_changes || 0), 0);
+
+    // Cohort baselines
+    const cohortStudents = [...new Set(quizCohort.map(row => row.student_gmail_id))];
+    const cohortAggregates = cohortStudents.map(studentEmail => {
+        const submissions = quizCohort.filter(row => row.student_gmail_id === studentEmail);
+        const correct = submissions.filter(row => row.is_correct === true);
+        const acc = submissions.length > 0 ? (correct.length / submissions.length) * 100 : 0;
+        const totalTime = submissions.reduce((sum, r) => sum + Number(r.time_spent_seconds || 0), 0);
+        const avgTime = submissions.length > 0 ? totalTime / submissions.length : 0;
+        
+        return {
+            email: studentEmail,
+            accuracy: acc,
+            avgTime: avgTime
+        };
+    });
+
+    const totalCohortAcc = cohortAggregates.reduce((sum, r) => sum + r.accuracy, 0);
+    const cohortAccAvg = cohortAggregates.length > 0 ? totalCohortAcc / cohortAggregates.length : 0;
+
+    const totalCohortTime = cohortAggregates.reduce((sum, r) => sum + r.avgTime, 0);
+    const cohortTimeAvg = cohortAggregates.length > 0 ? totalCohortTime / cohortAggregates.length : 0;
+
+    const totalCohortSwaps = quizCohort.reduce((sum, r) => sum + Number(r.selection_changes || 0), 0);
+    const cohortSwapsAvg = cohortStudents.length > 0 ? totalCohortSwaps / cohortStudents.length : 0;
+
+    // Percentile rankings
+    const sortedCohortAcc = [...cohortAggregates].sort((a, b) => b.accuracy - a.accuracy || a.avgTime - b.avgTime);
+    const studentIndexInSorted = sortedCohortAcc.findIndex(r => r.email === activeStudent);
+    const studentRank = studentIndexInSorted + 1;
+    const totalCohortCount = sortedCohortAcc.length;
+    
+    let studentPercentile = 100;
+    if (totalCohortCount > 1) {
+        studentPercentile = Math.round(((totalCohortCount - studentRank) / (totalCohortCount - 1)) * 100);
+    }
+
+    // UI Updates
+    document.getElementById("studentAccuracy").textContent = `${Math.round(studentAccVal)}%`;
+    document.getElementById("cohortAccuracy").textContent = `${Math.round(cohortAccAvg)}%`;
+    
+    const accDiff = studentAccVal - cohortAccAvg;
+    const accBadge = document.getElementById("diffAccuracyBadge");
+    if (accDiff >= 0) {
+        accBadge.textContent = `+${Math.round(accDiff)}% vs Peers`;
+        accBadge.className = "text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800";
+    } else {
+        accBadge.textContent = `${Math.round(accDiff)}% vs Peers`;
+        accBadge.className = "text-xs font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800";
+    }
+
+    document.getElementById("studentPacing").textContent = `${Math.round(studentAvgTime)}s`;
+    document.getElementById("cohortPacing").textContent = `${Math.round(cohortTimeAvg)}s`;
+
+    const paceDiff = studentAvgTime - cohortTimeAvg;
+    const paceBadge = document.getElementById("diffPacingBadge");
+    if (paceDiff <= 0) {
+        paceBadge.textContent = `${Math.round(Math.abs(paceDiff))}s Faster`;
+        paceBadge.className = "text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800";
+    } else {
+        paceBadge.textContent = `${Math.round(paceDiff)}s Slower`;
+        paceBadge.className = "text-xs font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800";
+    }
+
+    document.getElementById("studentHesitation").textContent = studentTotalSwaps;
+    document.getElementById("cohortHesitation").textContent = Math.round(cohortSwapsAvg);
+    
+    const hesitationBadge = document.getElementById("hesitationSubText");
+    if (studentTotalSwaps > cohortSwapsAvg * 1.3) {
+        hesitationBadge.textContent = "High Hesitation";
+        hesitationBadge.className = "text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800";
+    } else {
+        hesitationBadge.textContent = "Confident";
+        hesitationBadge.className = "text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800";
+    }
+
+    document.getElementById("studentPercentile").textContent = `${studentPercentile}th`;
+    document.getElementById("studentRank").textContent = `#${studentRank} of ${totalCohortCount} Peers`;
+
+    // Dynamic question properties
+    const uniqueQuestions = [...new Set(quizCohort.map(row => row.question_id))].sort((a,b) => {
+        const numA = parseInt(a.split('-').pop()) || 0;
+        const numB = parseInt(b.split('-').pop()) || 0;
+        return numA - numB;
+    });
+
+    const questionsStats = uniqueQuestions.map(qId => {
+        const qSubmissions = quizCohort.filter(row => row.question_id === qId);
+        const correctSubmissions = qSubmissions.filter(row => row.is_correct === true);
+        const qAccuracy = qSubmissions.length > 0 ? (correctSubmissions.length / qSubmissions.length) * 100 : 0;
+        
+        let difficulty = "Medium";
+        let diffColor = "bg-indigo-50 text-indigo-700 border-indigo-100";
+        if (qAccuracy > 75) {
+            difficulty = "Easy";
+            diffColor = "bg-emerald-50 text-emerald-700 border-emerald-100";
+        } else if (qAccuracy < 45) {
+            difficulty = "Hard";
+            diffColor = "bg-rose-50 text-rose-700 border-rose-100";
+        }
+
+        const avgTime = qSubmissions.reduce((sum, r) => sum + Number(r.time_spent_seconds || 0), 0) / qSubmissions.length;
+        const studentRow = studentSubmissions.find(row => row.question_id === qId);
+
+        return {
+            questionId: qId,
+            questionNum: qId.split('-').pop(),
+            cohortAccuracy: qAccuracy,
+            cohortAvgTime: avgTime,
+            difficulty: difficulty,
+            diffColor: diffColor,
+            studentData: studentRow ? {
+                is_correct: studentRow.is_correct === true,
+                time: Number(studentRow.time_spent_seconds || 0),
+                changes: Number(studentRow.selection_changes || 0),
+                answer: studentRow.student_answer
+            } : null
+        };
+    });
+
+    // Behavioural mapping
+    let masteredCount = 0;   
+    let deliberateCount = 0; 
+    let rushedCount = 0;     
+    let struggledCount = 0;  
+
+    questionsStats.forEach(stat => {
+        if (!stat.studentData) return;
+        const isCorrect = stat.studentData.is_correct;
+        const studentTime = stat.studentData.time;
+        const peersAvgTime = stat.cohortAvgTime;
+
+        if (isCorrect) {
+            if (studentTime <= peersAvgTime) masteredCount++;
+            else deliberateCount++;
+        } else {
+            if (studentTime <= peersAvgTime) rushedCount++;
+            else struggledCount++;
+        }
+    });
+
+    document.getElementById("quadMasteredCount").textContent = masteredCount;
+    document.getElementById("quadDeliberateCount").textContent = deliberateCount;
+    document.getElementById("quadRushedCount").textContent = rushedCount;
+    document.getElementById("quadStruggledCount").textContent = struggledCount;
+
+    // Coaching recommendations generator
+    let adviceText = "";
+    let strengthText = "";
+    let priorityText = "";
+
+    const isEoc = activeQuiz.toUpperCase().startsWith("EOC");
+    const moduleLabel = isEoc ? "Exercise Chapter Tasks" : "Quiz Questions";
+
+    if (studentAccVal >= 80) {
+        strengthText = `Excellent accuracy. You successfully completed high difficulty metrics!`;
+        if (studentAvgTime > cohortTimeAvg * 1.15) {
+            adviceText = `You display great mastery, but your slow pace suggests high hesitation. Speed up slightly on easy and medium ${moduleLabel}.`;
+            priorityText = "Target speed optimization.";
+        } else {
+            adviceText = `Superb! You lead your colleague cohort in both speed and accuracy.`;
+            priorityText = "Advance to complex challenge sets.";
+        }
+    } else {
+        if (rushedCount > struggledCount && rushedCount >= 2) {
+            adviceText = `Careless slips noted. You finish your ${moduleLabel} quickly but miss simple questions. Dedicate an extra 10-15 seconds per question to verify traps.`;
+            strengthText = "Excellent baseline processing speed.";
+            priorityText = "Verify Easy and Medium questions.";
+        } else if (struggledCount > rushedCount && struggledCount >= 2) {
+            adviceText = `Foundational struggles. You spend excessive time on complex questions but still miss them. Re-evaluate core reference material.`;
+            strengthText = "High focus and focus preservation.";
+            priorityText = "Review baseline concepts.";
+        } else {
+            adviceText = "Balanced execution profile. Continue working through targeted revisions to clear minor errors.";
+            strengthText = "Stable execution pace relative to cohort.";
+            priorityText = "Consolidate chapter queries.";
+        }
+    }
+
+    if (studentTotalSwaps > cohortSwapsAvg * 1.3) {
+        adviceText += " Warning: High hesitation rates note frequent selection swaps. Trust your first response instinct.";
+    }
+
+    document.getElementById("coachingSummary").textContent = adviceText;
+    document.getElementById("masteryStrength").textContent = strengthText;
+    document.getElementById("growthPriority").textContent = priorityText;
+
+    // Charts rendering
+    renderPacingChart(questionsStats);
+    renderDifficultyChart(questionsStats);
+
+    // Render detailed matrix rows
+    const tableBody = document.getElementById("questionTableBody");
+    tableBody.innerHTML = "";
+
+    questionsStats.forEach(stat => {
+        if (!stat.studentData) return;
+
+        const row = document.createElement("tr");
+        row.className = "hover:bg-slate-50 transition-colors border-b border-slate-100";
+
+        const statusBadge = stat.studentData.is_correct 
+            ? `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800"><i class="fa-solid fa-check mr-1"></i> Correct</span>`
+            : `<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 text-rose-800"><i class="fa-solid fa-xmark mr-1"></i> Missed</span>`;
+
+        const yourTime = stat.studentData.time;
+        const classTime = stat.cohortAvgTime;
+        const timeCompareClass = yourTime <= classTime 
+            ? `<span class="text-xs font-semibold text-emerald-600">${Math.round(yourTime)}s <i class="fa-solid fa-caret-down text-[10px]"></i></span>`
+            : `<span class="text-xs font-semibold text-rose-600">${Math.round(yourTime)}s <i class="fa-solid fa-caret-up text-[10px]"></i></span>`;
+
+        row.innerHTML = `
+            <td class="py-4 px-6 font-semibold text-slate-900">${stat.questionId}</td>
+            <td class="py-4 px-4 text-center">${statusBadge}</td>
+            <td class="py-4 px-4 font-mono text-xs max-w-xs truncate text-slate-500" title="${stat.studentData.answer}">${stat.studentData.answer}</td>
+            <td class="py-4 px-4 text-center">
+                <span class="inline-block px-2.5 py-0.5 rounded-lg text-xs font-bold ${stat.diffColor}">${stat.difficulty}</span>
+            </td>
+            <td class="py-4 px-4 text-slate-600">
+                <div class="flex items-center space-x-2">
+                    ${timeCompareClass}
+                    <span class="text-xs text-slate-400">/</span>
+                    <span class="text-xs text-slate-500 font-medium">${Math.round(classTime)}s avg</span>
+                </div>
+            </td>
+            <td class="py-4 px-4 text-center font-bold text-slate-600">${stat.studentData.changes}</td>
+            <td class="py-4 px-6 text-center">
+                <div class="flex items-center justify-center space-x-2">
+                    <div class="w-12 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                        <div class="bg-indigo-600 h-full" style="width: ${stat.cohortAccuracy}%"></div>
+                    </div>
+                    <span class="text-xs font-bold text-slate-700">${Math.round(stat.cohortAccuracy)}%</span>
+                </div>
+            </td>
+        `;
+        tableBody.appendChild(row);
+    });
+}
+
+function clearMetrics() {
+    document.getElementById("studentAccuracy").textContent = "0%";
+    document.getElementById("cohortAccuracy").textContent = "0%";
+    document.getElementById("studentPacing").textContent = "0s";
+    document.getElementById("cohortPacing").textContent = "0s";
+    document.getElementById("studentHesitation").textContent = "0";
+    document.getElementById("cohortHesitation").textContent = "0";
+    document.getElementById("studentPercentile").textContent = "0th";
+    document.getElementById("studentRank").textContent = "No Submissions Found";
+    document.getElementById("questionTableBody").innerHTML = `
+        <tr>
+            <td colspan="7" class="py-8 text-center text-xs text-slate-400">Please verify student has submissions for the search criteria</td>
+        </tr>
+    `;
+    if (pacingChartInstance) pacingChartInstance.destroy();
+    if (difficultyChartInstance) difficultyChartInstance.destroy();
+}
+
+function renderPacingChart(stats) {
+    const ctx = document.getElementById("pacingProfileChart").getContext("2d");
+
+    const labels = stats.map(s => `Q${s.questionNum}`);
+    const studentTimes = stats.map(s => s.studentData ? s.studentData.time : 0);
+    const peerTimes = stats.map(s => parseFloat(s.cohortAvgTime.toFixed(1)));
+
+    if (pacingChartInstance) {
+        pacingChartInstance.destroy();
+    }
+
+    pacingChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Selected Student',
+                    data: studentTimes,
+                    backgroundColor: 'rgba(79, 70, 229, 0.95)',
+                    borderColor: 'rgb(79, 70, 229)',
+                    borderWidth: 1.5,
+                    borderRadius: 4,
+                    barPercentage: 0.6,
+                    categoryPercentage: 0.7
+                },
+                {
+                    label: 'Cohort Average',
+                    data: peerTimes,
+                    backgroundColor: 'rgba(203, 213, 225, 0.7)',
+                    borderColor: 'rgb(148, 163, 184)',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    barPercentage: 0.6,
+                    categoryPercentage: 0.7
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: '#1e293b',
+                    titleFont: { size: 12, weight: 'bold', family: 'Inter' },
+                    bodyFont: { size: 12, family: 'Inter' },
+                    padding: 10,
+                    cornerRadius: 8
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        color: '#64748b',
+                        font: { size: 10, weight: 'bold', family: 'Inter' }
+                    }
+                },
+                y: {
+                    grid: { color: '#f1f5f9' },
+                    ticks: {
+                        color: '#64748b',
+                        font: { size: 10, family: 'Inter' },
+                        callback: function(v) { return v + 's'; }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderDifficultyChart(stats) {
+    const ctx = document.getElementById("difficultyBreakdownChart").getContext("2d");
+
+    const categories = {
+        Easy: { studentCorrect: 0, studentTotal: 0, cohortCorrect: 0, cohortTotal: 0 },
+        Medium: { studentCorrect: 0, studentTotal: 0, cohortCorrect: 0, cohortTotal: 0 },
+        Hard: { studentCorrect: 0, studentTotal: 0, cohortCorrect: 0, cohortTotal: 0 }
+    };
+
+    stats.forEach(stat => {
+        const diff = stat.difficulty;
+        if (!categories[diff]) return;
+
+        if (stat.studentData) {
+            categories[diff].studentTotal++;
+            if (stat.studentData.is_correct) {
+                categories[diff].studentCorrect++;
+            }
+        }
+
+        categories[diff].cohortCorrect += (stat.cohortAccuracy / 100);
+        categories[diff].cohortTotal++;
+    });
+
+    const labels = ['Easy', 'Medium', 'Hard'];
+    const studentAccList = labels.map(label => {
+        const cat = categories[label];
+        return cat.studentTotal > 0 ? Math.round((cat.studentCorrect / cat.studentTotal) * 100) : 0;
+    });
+
+    const cohortAccList = labels.map(label => {
+        const cat = categories[label];
+        return cat.cohortTotal > 0 ? Math.round((cat.cohortCorrect / cat.cohortTotal) * 100) : 0;
+    });
+
+    if (difficultyChartInstance) {
+        difficultyChartInstance.destroy();
+    }
+
+    difficultyChartInstance = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Selected Student',
+                    data: studentAccList,
+                    backgroundColor: 'rgba(99, 102, 241, 0.2)',
+                    borderColor: 'rgb(79, 70, 229)',
+                    borderWidth: 2.5,
+                    pointBackgroundColor: 'rgb(79, 70, 229)'
+                },
+                {
+                    label: 'Cohort Average',
+                    data: cohortAccList,
+                    backgroundColor: 'rgba(148, 163, 184, 0.1)',
+                    borderColor: 'rgb(148, 163, 184)',
+                    borderWidth: 1.5,
+                    borderDash: [4, 4]
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: { font: { size: 10, family: 'Inter' } }
+                }
+            },
+            scales: {
+                r: {
+                    angleLines: { color: '#f1f5f9' },
+                    grid: { color: '#e2e8f0' },
+                    suggestedMin: 0,
+                    suggestedMax: 100,
+                    ticks: {
+                        stepSize: 20,
+                        color: '#94a3b8',
+                        backdropColor: 'transparent',
+                        font: { size: 9 }
+                    },
+                    pointLabels: {
+                        color: '#334155',
+                        font: { size: 11, weight: 'bold', family: 'Inter' }
+                    }
+                }
+            }
+        }
+    });
+}
+</script>
+</body>
+</html>
